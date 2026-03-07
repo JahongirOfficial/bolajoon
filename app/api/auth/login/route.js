@@ -10,9 +10,9 @@ import { rateLimit, getClientIp } from '@/lib/rateLimit';
 
 export async function POST(request) {
     try {
-        // Rate limit: 10 attempts per 15 minutes per IP
+        // Rate limit: 20 attempts per 15 minutes per IP
         const ip = getClientIp(request);
-        const { limited } = rateLimit(`login:${ip}`, 10, 15 * 60 * 1000);
+        const { limited } = rateLimit(`login:${ip}`, 20, 15 * 60 * 1000);
         if (limited) {
             return errorResponse('Juda ko\'p urinish. 15 daqiqadan so\'ng qayta urinib ko\'ring.', 429);
         }
@@ -55,7 +55,7 @@ export async function POST(request) {
         // Calculate days remaining
         const daysRemaining = user.getDaysRemaining();
 
-        return successResponse({
+        const response = successResponse({
             message: 'Kirish muvaffaqiyatli',
             token,
             user: {
@@ -69,6 +69,11 @@ export async function POST(request) {
                 daysRemaining
             }
         });
+
+        // Set token as cookie so Next.js middleware can verify server-side
+        response.headers.set('Set-Cookie', `token=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=604800`);
+
+        return response;
 
     } catch (error) {
         console.error('Login error:', error);

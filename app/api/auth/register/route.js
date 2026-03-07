@@ -22,7 +22,15 @@ export async function POST(request) {
         await dbConnect();
 
         const body = await request.json();
-        const { name, phone, password, role } = body;
+        const { phone, password, role } = body;
+        // Full XSS sanitization: strip HTML tags, event handlers, javascript: URIs
+        const name = (body.name || '')
+            .trim()
+            .replace(/<[^>]*>/g, '')                    // remove HTML tags
+            .replace(/javascript\s*:/gi, '')            // remove javascript: URIs
+            .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '') // remove onerror= onclick= etc
+            .replace(/[<>"'&]/g, '')                    // remove dangerous chars
+            .slice(0, 100);                             // limit length
 
         // Validation
         if (!name || !phone || !password) {

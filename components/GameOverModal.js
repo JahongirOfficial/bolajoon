@@ -1,17 +1,36 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { RotateCcw, Trophy, Star, TrendingUp, ArrowRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-export default function GameOverModal({ won, score, total, onRestart }) {
+export default function GameOverModal({ won, score, total, onRestart, nextGameUrl }) {
     const [show, setShow] = useState(false);
+    const [countdown, setCountdown] = useState(3);
+    const router = useRouter();
     const percentage = total ? Math.round((score / total) * 100) : 0;
+    const backUrl = nextGameUrl || '/dashboard/games';
 
     useEffect(() => {
-        // Trigger animation after mount
         setTimeout(() => setShow(true), 100);
     }, []);
+
+    // G'alaba bo'lganda 3 soniya keyin avtomatik o'tish
+    useEffect(() => {
+        if (!won) return;
+        const interval = setInterval(() => {
+            setCountdown(prev => {
+                if (prev <= 1) {
+                    clearInterval(interval);
+                    router.push(backUrl);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [won, backUrl, router]);
 
     return (
         <div 
@@ -247,11 +266,11 @@ export default function GameOverModal({ won, score, total, onRestart }) {
                             <RotateCcw size={18} strokeWidth={2.5} />
                             Qayta urinish
                         </button>
-                        <Link 
-                            href="/dashboard/games" 
+                        <Link
+                            href={backUrl}
                             className="btn rounded-pill px-4 py-2 d-flex align-items-center gap-2 shadow-sm text-white text-decoration-none"
                             style={{
-                                background: won 
+                                background: won
                                     ? 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)'
                                     : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
                                 border: 'none',
@@ -262,7 +281,7 @@ export default function GameOverModal({ won, score, total, onRestart }) {
                             }}
                             onMouseEnter={(e) => {
                                 e.currentTarget.style.transform = 'translateY(-2px)';
-                                e.currentTarget.style.boxShadow = won 
+                                e.currentTarget.style.boxShadow = won
                                     ? '0 8px 24px rgba(16, 185, 129, 0.4)'
                                     : '0 8px 24px rgba(37, 99, 235, 0.4)';
                             }}
@@ -271,7 +290,7 @@ export default function GameOverModal({ won, score, total, onRestart }) {
                                 e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
                             }}
                         >
-                            Keyingisi
+                            {won ? `Keyingisi (${countdown}s)` : 'Keyingisi'}
                             <ArrowRight size={18} strokeWidth={2.5} />
                         </Link>
                     </div>

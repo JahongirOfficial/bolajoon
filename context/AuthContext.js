@@ -71,7 +71,7 @@ export function AuthProvider({ children }) {
                 setUser(data.user);
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('user', JSON.stringify(data.user));
-                return { success: true };
+                return { success: true, user: data.user };
             } else {
                 return { success: false, error: data.error };
             }

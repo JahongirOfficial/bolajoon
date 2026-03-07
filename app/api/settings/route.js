@@ -5,19 +5,26 @@
  */
 import dbConnect from '@/lib/mongodb';
 import Settings from '@/models/Settings';
-import { adminOnly } from '@/middleware/authMiddleware';
+import { authenticate, adminOnly } from '@/middleware/authMiddleware';
 import { successResponse, errorResponse, serverError } from '@/lib/apiResponse';
 
-// GET - Get public settings (payment info)
-export async function GET() {
+// GET - Get settings (authenticated users get payment details, unauthenticated get only prices)
+export async function GET(request) {
     try {
         await dbConnect();
+
+        const dailyPrice = await Settings.get('dailyPrice', 200);
+        const bookPrice = await Settings.get('bookPrice', 50000);
+
+        // Check authentication — only logged-in users get card/phone details
+        const auth = await authenticate(request);
+        if (!auth.success) {
+            return successResponse({ dailyPrice, bookPrice });
+        }
 
         const adminPhone = await Settings.get('adminPhone', '+998900000000');
         const cardNumber = await Settings.get('cardNumber', '8600 0000 0000 0000');
         const cardHolder = await Settings.get('cardHolder', 'Admin');
-        const dailyPrice = await Settings.get('dailyPrice', 200);
-        const bookPrice = await Settings.get('bookPrice', 50000);
 
         return successResponse({
             adminPhone,

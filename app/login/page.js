@@ -46,7 +46,10 @@ export default function LoginPage() {
         }
 
         const result = await login(phone, formData.password);
-        if (!result.success) {
+        if (result.success) {
+            const role = result.user?.role;
+            router.push(role === 'admin' ? '/admin' : '/dashboard');
+        } else {
             setError(result.error);
             setLoading(false);
         }

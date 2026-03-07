@@ -6,6 +6,7 @@
 import dbConnect from '@/lib/mongodb';
 import Lesson from '@/models/Lesson';
 import { authenticate, adminOnly } from '@/middleware/authMiddleware';
+
 import { successResponse, errorResponse, serverError } from '@/lib/apiResponse';
 import { getCached, setCache, clearCache } from '@/lib/cache';
 
@@ -18,9 +19,15 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // 60 seconds timeout
 export const revalidate = 300; // Revalidate every 5 minutes
 
-// GET - Get all active lessons with aggressive caching
-export async function GET() {
+// GET - Get all active lessons (requires authentication)
+export async function GET(request) {
     try {
+        // Require authentication — lessons are paid content
+        const auth = await authenticate(request);
+        if (!auth.success) {
+            return errorResponse(auth.error, auth.status);
+        }
+
         // Check cache first (instant response if cached)
         const cached = getCached(LESSONS_CACHE_KEY);
         if (cached) {

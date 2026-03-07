@@ -5,6 +5,7 @@ import { DataProvider } from '@/context/DataContext';
 import { SubscriptionProvider } from '@/components/SubscriptionModal';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
+import PageTracker from '@/components/PageTracker';
 
 export default function Providers({ children }) {
     // Create QueryClient with optimized settings
@@ -23,6 +24,7 @@ export default function Providers({ children }) {
     return (
         <QueryClientProvider client={queryClient}>
             <AuthProvider>
+                <PageTracker />
                 <SubscriptionProvider>
                     <DataProvider>
                         {children}

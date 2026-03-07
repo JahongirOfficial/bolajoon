@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, Users, Video, Gift, Gamepad2, BarChart3, Settings, Menu, X, ArrowLeftRight, LogOut, BookOpen, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, Users, Video, Gift, BarChart3, Settings, Menu, X, ArrowLeftRight, LogOut, BookOpen, MessageSquare, CreditCard, UserCircle, MousePointerClick } from 'lucide-react';
 
 export default function AdminSidebar() {
     const pathname = usePathname();
@@ -37,11 +37,13 @@ export default function AdminSidebar() {
         { href: '/admin/users', icon: Users, label: 'Foydalanuvchilar' },
         { href: '/admin/lessons', icon: Video, label: 'Darslar' },
         { href: '/admin/rewards', icon: Gift, label: "Sovg'alar" },
+        { href: '/admin/payments', icon: CreditCard, label: "To'lovlar" },
         { href: '/admin/book', icon: BookOpen, label: 'Kitobcha' },
         { href: '/admin/sms', icon: MessageSquare, label: 'SMS Yuborish' },
-        { href: '/admin/games-test', icon: Gamepad2, label: "O'yinlarni test qilish" },
+        { href: '/admin/analytics', icon: MousePointerClick, label: 'Foydalanuvchi tahlili' },
         { href: '/admin/statistics', icon: BarChart3, label: 'Statistika' },
         { href: '/admin/settings', icon: Settings, label: 'Sozlamalar' },
+        { href: '/admin/profile', icon: UserCircle, label: 'Profil' },
     ];
 
     return (

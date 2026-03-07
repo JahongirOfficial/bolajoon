@@ -2,15 +2,16 @@
 
 import { useState, useRef } from 'react';
 import { VideoOff, AlertCircle } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 /**
  * Universal Video Player Component
  * Supports: YouTube, Vimeo, direct video files (mp4, webm, etc.)
  */
 export default function VideoPlayer({ url, title = 'Video' }) {
-    const [isPlaying, setIsPlaying] = useState(false);
     const [error, setError] = useState(false);
     const videoRef = useRef(null);
+    const { token } = useAuth();
 
     if (!url) {
         return (
@@ -66,6 +67,10 @@ export default function VideoPlayer({ url, title = 'Video' }) {
     if (url.startsWith('/video/')) {
         const filename = url.split('/video/')[1];
         videoUrl = `/api/video/${filename}`;
+    }
+    // Append JWT token for authenticated video streaming
+    if (videoUrl.startsWith('/api/video/') && token) {
+        videoUrl = `${videoUrl}?token=${token}`;
     }
 
     return (

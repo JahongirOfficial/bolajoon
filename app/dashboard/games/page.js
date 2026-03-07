@@ -18,9 +18,32 @@ export default function GamesPage() {
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [lessons, setLessons] = useState([]);
     const [progress, setProgress] = useState({ completedLessons: [], wonGames: [] });
-    const [showStudentModal, setShowStudentModal] = useState(true);
+    const [showStudentModal, setShowStudentModal] = useState(false);
     const [loadingProgress, setLoadingProgress] = useState(false);
     const [hasScrolled, setHasScrolled] = useState(false);
+
+    // Auto-select student from localStorage or if only one student
+    useEffect(() => {
+        if (!students || students.length === 0 || selectedStudent) return;
+
+        if (students.length === 1) {
+            setSelectedStudent(students[0]);
+            return;
+        }
+
+        try {
+            const lastId = localStorage.getItem('lastSelectedStudentId');
+            if (lastId) {
+                const found = students.find(s => s._id === lastId);
+                if (found) {
+                    setSelectedStudent(found);
+                    return;
+                }
+            }
+        } catch {}
+
+        setShowStudentModal(true);
+    }, [students]);
 
     // Sort lessons when loaded
     useEffect(() => {
@@ -105,13 +128,15 @@ export default function GamesPage() {
     const handleSelectStudent = (student) => {
         setSelectedStudent(student);
         setShowStudentModal(false);
-        setHasScrolled(false); // Reset scroll flag for new student
+        setHasScrolled(false);
+        try { localStorage.setItem('lastSelectedStudentId', student._id); } catch {}
     };
 
     const handleChangeStudent = () => {
         setShowStudentModal(true);
         setSelectedStudent(null);
-        setHasScrolled(false); // Reset scroll flag
+        setHasScrolled(false);
+        try { localStorage.removeItem('lastSelectedStudentId'); } catch {}
     };
 
     // Student Selection Modal

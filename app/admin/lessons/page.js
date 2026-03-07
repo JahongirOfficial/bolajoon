@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
 import Link from 'next/link';
 import ConfirmModal from '@/components/ConfirmModal';
-import { Plus, PlayCircle, Eye, EyeOff, Edit2, Trash2, Video } from 'lucide-react';
+import { Plus, PlayCircle, Eye, EyeOff, Edit2, Trash2, Video, Search } from 'lucide-react';
 
 export default function AdminLessonsPage() {
     const { getAuthHeader } = useAuth();
@@ -14,6 +14,8 @@ export default function AdminLessonsPage() {
     const [loading, setLoading] = useState(true);
     const [deleteModal, setDeleteModal] = useState({ show: false, lesson: null });
     const [deleting, setDeleting] = useState(false);
+    const [search, setSearch] = useState('');
+    const [filterStatus, setFilterStatus] = useState('all');
 
     useEffect(() => {
         fetchLessons();
@@ -86,8 +88,17 @@ export default function AdminLessonsPage() {
         }
     };
 
-    // Group lessons by level
-    const lessonsByLevel = lessons.reduce((acc, lesson) => {
+    // Filter and group lessons by level
+    const filteredLessons = lessons.filter(l => {
+        const matchSearch = l.title?.toLowerCase().includes(search.toLowerCase()) ||
+            l.description?.toLowerCase().includes(search.toLowerCase());
+        const matchStatus = filterStatus === 'all' ||
+            (filterStatus === 'active' && l.isActive) ||
+            (filterStatus === 'inactive' && !l.isActive);
+        return matchSearch && matchStatus;
+    });
+
+    const lessonsByLevel = filteredLessons.reduce((acc, lesson) => {
         const level = lesson.level || 1;
         if (!acc[level]) acc[level] = [];
         acc[level].push(lesson);
@@ -107,6 +118,38 @@ export default function AdminLessonsPage() {
                 </Link>
             </div>
 
+            {/* Search & Filter */}
+            <div className="card border-0 rounded-4 shadow-sm mb-4">
+                <div className="card-body p-3">
+                    <div className="row g-2 align-items-center">
+                        <div className="col-md-6">
+                            <div className="position-relative">
+                                <Search size={16} className="position-absolute top-50 translate-middle-y text-muted" style={{ left: '12px' }} />
+                                <input
+                                    type="text"
+                                    className="form-control rounded-3 border-0 bg-light"
+                                    placeholder="Dars nomi yoki tavsif..."
+                                    style={{ paddingLeft: '36px' }}
+                                    value={search}
+                                    onChange={e => setSearch(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <div className="col-md-6 d-flex gap-2">
+                            {['all', 'active', 'inactive'].map(s => (
+                                <button
+                                    key={s}
+                                    onClick={() => setFilterStatus(s)}
+                                    className={`btn btn-sm rounded-pill px-3 ${filterStatus === s ? 'btn-primary' : 'btn-outline-secondary'}`}
+                                >
+                                    {s === 'all' ? 'Barchasi' : s === 'active' ? 'Faol' : 'Nofaol'}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {loading ? (
                 <div className="text-center py-5">
                     <div className="spinner-border text-primary" role="status">
@@ -114,14 +157,18 @@ export default function AdminLessonsPage() {
                     </div>
                     <p className="text-muted mt-3 small">Darslar yuklanmoqda...</p>
                 </div>
-            ) : lessons.length === 0 ? (
+            ) : filteredLessons.length === 0 ? (
                 <div className="card border-0 rounded-4 shadow-sm">
                     <div className="card-body text-center py-5">
                         <Video size={48} className="mb-2 text-muted" />
-                        <p className="text-muted mb-3">Hali dars qo'shilmagan</p>
-                        <Link href="/admin/lessons/add" className="btn btn-primary rounded-3">
-                            Birinchi darsni qo'shish
-                        </Link>
+                        <p className="text-muted mb-3">
+                            {lessons.length === 0 ? "Hali dars qo'shilmagan" : 'Qidiruv natijasi topilmadi'}
+                        </p>
+                        {lessons.length === 0 && (
+                            <Link href="/admin/lessons/add" className="btn btn-primary rounded-3">
+                                Birinchi darsni qo'shish
+                            </Link>
+                        )}
                     </div>
                 </div>
             ) : (

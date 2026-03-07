@@ -46,7 +46,7 @@ export async function GET(request) {
 
         // 🚀 STEP 3: Get all teachers in one query with lean()
         const teachers = await User.find({ role: { $in: ['teacher', 'admin'] } })
-            .select('-password +plainPassword')
+            .select('-password')
             .sort({ createdAt: -1 })
             .lean()
             .exec();

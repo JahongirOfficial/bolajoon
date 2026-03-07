@@ -42,9 +42,9 @@ export function DataProvider({ children }) {
 
             // Step 1: Fetch critical data in parallel (show UI fast)
             const [lessonsRes, studentsRes, rewardsRes, dashboardRes] = await Promise.all([
-                fetch('/api/lessons').catch(() => ({ ok: false })),
+                fetch('/api/lessons', { headers }).catch(() => ({ ok: false })),
                 fetch('/api/students', { headers }).catch(() => ({ ok: false })),
-                fetch('/api/rewards').catch(() => ({ ok: false })),
+                fetch('/api/rewards', { headers }).catch(() => ({ ok: false })),
                 fetch('/api/dashboard', { headers }).catch(() => ({ ok: false })),
             ]);
 
@@ -98,13 +98,13 @@ export function DataProvider({ children }) {
     // Refresh specific data
     const refreshLessons = useCallback(async () => {
         try {
-            const res = await fetch('/api/lessons');
+            const res = await fetch('/api/lessons', { headers: getAuthHeader() });
             const data = await res.json();
             if (data.success) setLessons(data.lessons || []);
         } catch (error) {
             console.error('Failed to refresh lessons:', error);
         }
-    }, []);
+    }, [getAuthHeader]);
 
     const refreshStudents = useCallback(async () => {
         try {
@@ -118,13 +118,13 @@ export function DataProvider({ children }) {
 
     const refreshRewards = useCallback(async () => {
         try {
-            const res = await fetch('/api/rewards');
+            const res = await fetch('/api/rewards', { headers: getAuthHeader() });
             const data = await res.json();
             if (data.success) setRewards(data.rewards || []);
         } catch (error) {
             console.error('Failed to refresh rewards:', error);
         }
-    }, []);
+    }, [getAuthHeader]);
 
     const refreshDashboard = useCallback(async () => {
         try {
