@@ -79,9 +79,9 @@ async function buildStats() {
     const ageLines = total > 0
         ? Object.entries(byAge)
             .sort((a, b) => b[1] - a[1])
-            .map(([age, cnt]) => `  • ${age}: *${cnt}* (${Math.round(cnt / total * 100)}%)`)
+            .map(([age, cnt]) => `  • ${age}: <b>${cnt}</b> (${Math.round(cnt / total * 100)}%)`)
             .join('\n')
-        : '  — yo\'q';
+        : "  — yo'q";
 
     // Qiziqish bo'yicha
     const byInterest = {};
@@ -89,9 +89,9 @@ async function buildStats() {
     const interestLines = total > 0
         ? Object.entries(byInterest)
             .sort((a, b) => b[1] - a[1])
-            .map(([int, cnt]) => `  • ${int}: *${cnt}* (${Math.round(cnt / total * 100)}%)`)
+            .map(([int, cnt]) => `  • ${int}: <b>${cnt}</b> (${Math.round(cnt / total * 100)}%)`)
             .join('\n')
-        : '  — yo\'q';
+        : "  — yo'q";
 
     // So'nggi 5 ta lead
     const recentLeads = leads.slice(-5).reverse()
@@ -107,50 +107,49 @@ async function buildStats() {
     const p = await fetchPlatformStats();
     const platformSection = p ? `
 ━━━━━━━━━━━━━━━━━━━━
-🌐 *PLATFORMA (bolajoon.uz)*
+🌐 <b>PLATFORMA (bolajoon.uz)</b>
 
-👤 *Jami foydalanuvchilar:* ${p.totalUsers || 0}
-🎓 *O'quvchilar:* ${p.totalStudents || 0}
-✅ *Faol obuna:* ${p.activeSubscriptions || 0}
-🆓 *Trial:* ${p.trialSubscriptions || 0}
-📚 *Darslar:* ${p.activeLessons || 0} / ${p.totalLessons || 0}
-📈 *Jami progress:* ${p.totalProgress || 0}
+👤 <b>Jami foydalanuvchilar:</b> ${p.totalUsers || 0}
+🎓 <b>O'quvchilar:</b> ${p.totalStudents || 0}
+✅ <b>Faol obuna:</b> ${p.activeSubscriptions || 0}
+🆓 <b>Trial:</b> ${p.trialSubscriptions || 0}
+📚 <b>Darslar:</b> ${p.activeLessons || 0} / ${p.totalLessons || 0}
+📈 <b>Jami progress:</b> ${p.totalProgress || 0}
 
-👥 *Yangi a'zolar:*
-  • Bugun: *${p.newUsersToday || 0}*
-  • Oxirgi 7 kun: *${p.newUsersWeek || 0}*
-  • Oxirgi 30 kun: *${p.newUsersMonth || 0}*
+👥 <b>Yangi a'zolar:</b>
+  • Bugun: <b>${p.newUsersToday || 0}</b>
+  • Oxirgi 7 kun: <b>${p.newUsersWeek || 0}</b>
+  • Oxirgi 30 kun: <b>${p.newUsersMonth || 0}</b>
 
-👁 *Sahifa ko'rishlar:*
-  • Bugun: *${p.todayPageViews || 0}*
-  • Jami: *${p.totalPageViews || 0}*` : '';
+👁 <b>Sahifa ko'rishlar:</b>
+  • Bugun: <b>${p.todayPageViews || 0}</b>
+  • Jami: <b>${p.totalPageViews || 0}</b>` : '';
 
     const leadsSection = total === 0
-        ? '\n📭 Hali hech qanday lead yo\'q.'
+        ? "\n📭 Hali hech qanday lead yo'q."
         : `
 ━━━━━━━━━━━━━━━━━━━━
-📬 *TELEGRAM LEADLAR*
+📬 <b>TELEGRAM LEADLAR</b>
 
-👥 *Jami leadlar:* ${total}
-📅 *Bugun:* ${todayCount}
-📆 *Oxirgi 7 kun:* ${weekCount}
+👥 <b>Jami leadlar:</b> ${total}
+📅 <b>Bugun:</b> ${todayCount}
+📆 <b>Oxirgi 7 kun:</b> ${weekCount}
 
 ━━━━━━━━━━━━━━━━━━━━
-👶 *Yosh bo'yicha:*
+👶 <b>Yosh bo'yicha:</b>
 ${ageLines}
 
 ━━━━━━━━━━━━━━━━━━━━
-📚 *Qiziqish bo'yicha:*
+📚 <b>Qiziqish bo'yicha:</b>
 ${interestLines}
 
 ━━━━━━━━━━━━━━━━━━━━
-🕐 *So'nggi 5 ta lead:*
+🕐 <b>So'nggi 5 ta lead:</b>
 
 ${recentLeads}`;
 
-    return `📊 *BOLAJOON STATISTIKA*
-🕐 ${new Date().toLocaleString('uz-UZ', { timeZone: 'Asia/Tashkent' })}
-${platformSection}${leadsSection}`;
+    const dateStr = new Date().toLocaleString('ru-RU', { timeZone: 'Asia/Tashkent' });
+    return `📊 <b>BOLAJOON STATISTIKA</b>\n🕐 ${dateStr}\n${platformSection}${leadsSection}`;
 }
 
 // ─── Foydalanuvchi sessiyalari (xotirada) ──────────────────────────────────────
@@ -169,10 +168,10 @@ bot.onText(/\/s/, async (msg) => {
         await bot.editMessageText(text, {
             chat_id: chatId,
             message_id: loadingMsg.message_id,
-            parse_mode: 'Markdown'
+            parse_mode: 'HTML'
         });
     } catch {
-        bot.sendMessage(chatId, await buildStats(), { parse_mode: 'Markdown' });
+        bot.sendMessage(chatId, await buildStats(), { parse_mode: 'HTML' });
     }
 });
 

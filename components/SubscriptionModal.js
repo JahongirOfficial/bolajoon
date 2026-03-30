@@ -2,7 +2,7 @@
 
 import { useState, useEffect, createContext, useContext } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { CreditCard, CircleDot, Circle, Copy, Check, Phone } from 'lucide-react';
+import { CreditCard, Copy, Check, Phone } from 'lucide-react';
 
 const SubscriptionContext = createContext();
 
@@ -25,7 +25,6 @@ export function SubscriptionProvider({ children }) {
     useEffect(() => {
         const handleSubscriptionUpdate = (event) => {
             if (event.detail && event.detail.daysRemaining !== undefined) {
-                console.log('Subscription updated via event:', event.detail.daysRemaining);
                 setDaysRemaining(event.detail.daysRemaining);
                 setIsSubscriptionValid(event.detail.daysRemaining > 0);
             }
@@ -39,47 +38,31 @@ export function SubscriptionProvider({ children }) {
 
     const checkSubscription = async () => {
         try {
-            console.log('Checking subscription...');
-            
             const res = await fetch('/api/auth/me', {
                 headers: getAuthHeader()
             });
             const data = await res.json();
-            
-            console.log('Subscription check response:', data);
-            
+
             if (data.success && data.user) {
                 const days = data.user.daysRemaining || 0;
-                console.log('Days remaining:', days);
                 setDaysRemaining(days);
                 setIsSubscriptionValid(days > 0);
                 setSubscriptionChecked(true);
             } else {
-                console.error('Failed to get user data:', data);
-                // If API fails, assume valid to avoid blocking
                 setIsSubscriptionValid(true);
                 setSubscriptionChecked(true);
             }
         } catch (error) {
             console.error('Failed to check subscription:', error);
-            // On error, assume valid to avoid blocking
             setIsSubscriptionValid(true);
             setSubscriptionChecked(true);
         }
     };
 
     const requireSubscription = (callback) => {
-        console.log('requireSubscription called:', {
-            userRole: user?.role,
-            isSubscriptionValid,
-            daysRemaining
-        });
-        
         if (user?.role === 'admin' || isSubscriptionValid) {
-            console.log('Subscription valid, executing callback');
             callback();
         } else {
-            console.log('Subscription invalid, showing modal');
             setShowModal(true);
         }
     };
@@ -107,41 +90,34 @@ export function useSubscription() {
     return context;
 }
 
+const TELEGRAM_ADMIN = 'namozjon_cdo';
+
 export default function SubscriptionModal() {
     const { user } = useAuth();
-    const { showModal, setShowModal, daysRemaining, checkSubscription } = useSubscription();
+    const { showModal, setShowModal, daysRemaining } = useSubscription();
     const [paymentInfo, setPaymentInfo] = useState(null);
     const [copied, setCopied] = useState(false);
-    const [selectedDays, setSelectedDays] = useState(1);
+    const [days, setDays] = useState(30);
     const [loading, setLoading] = useState(true);
 
-    const packages = [
-        { days: 1, label: '1 kun' },
-        { days: 7, label: '1 hafta' },
-        { days: 30, label: '1 oy' },
-    ];
-
     useEffect(() => {
-        if (user) {
-            fetchData();
-        }
+        if (user) fetchData();
     }, [user]);
 
     const fetchData = async () => {
         try {
-            const settingsRes = await fetch('/api/settings');
-            const settingsData = await settingsRes.json();
-
-            if (settingsData.success) {
+            const res = await fetch('/api/settings');
+            const data = await res.json();
+            if (data.success) {
                 setPaymentInfo({
-                    adminPhone: settingsData.adminPhone,
-                    cardNumber: settingsData.cardNumber,
-                    cardHolder: settingsData.cardHolder,
-                    dailyPrice: settingsData.dailyPrice || 500
+                    adminPhone: data.adminPhone,
+                    cardNumber: data.cardNumber,
+                    cardHolder: data.cardHolder,
+                    dailyPrice: data.dailyPrice || 500
                 });
             }
-        } catch (error) {
-            console.error('Failed to fetch subscription data:', error);
+        } catch (e) {
+            console.error('Failed to fetch settings:', e);
         } finally {
             setLoading(false);
         }
@@ -155,153 +131,138 @@ export default function SubscriptionModal() {
         }
     };
 
-    // Don't render anything if loading, no user, or admin
-    if (loading || !user || user.role === 'admin') {
-        console.log('SubscriptionModal: Not rendering', { loading, hasUser: !!user, role: user?.role });
-        return null;
-    }
+    const totalAmount = paymentInfo ? paymentInfo.dailyPrice * days : 0;
 
-    // Only show modal when explicitly requested
-    if (!showModal || !paymentInfo) {
-        console.log('SubscriptionModal: Not showing', { showModal, hasPaymentInfo: !!paymentInfo });
-        return null;
-    }
+    const telegramLink = `https://t.me/${TELEGRAM_ADMIN}`;
+
+    if (loading || !user || user.role === 'admin') return null;
+    if (!showModal || !paymentInfo) return null;
 
     const isExpired = daysRemaining <= 0;
-    console.log('SubscriptionModal: Rendering', { showModal, isExpired, daysRemaining });
 
     return (
         <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 10000 }}>
             <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
                 <div className="modal-content rounded-4 border-0 shadow-lg">
+
+                    {/* Header */}
                     <div className="modal-header border-0 pb-0">
                         <h5 className="modal-title fw-bold d-flex align-items-center gap-2">
                             <CreditCard size={20} className="text-primary" />
                             {isExpired ? 'Obuna muddati tugadi' : 'Obunani uzaytirish'}
                         </h5>
-                        <button
-                            type="button"
-                            className="btn-close"
-                            onClick={() => setShowModal(false)}
-                        ></button>
+                        <button type="button" className="btn-close" onClick={() => setShowModal(false)} />
                     </div>
-                    <div className="modal-body">
-                        {/* Current Status */}
+
+                    <div className="modal-body pt-3">
+
+                        {/* Status badge */}
                         <div
-                            className="rounded-4 p-3 mb-4 text-center"
-                            style={{
-                                backgroundColor: daysRemaining <= 3 ? '#fee2e2' : '#e0f2fe'
-                            }}
+                            className="rounded-3 p-3 mb-4 text-center"
+                            style={{ backgroundColor: isExpired ? '#fee2e2' : '#e0f2fe' }}
                         >
-                            <p className="small fw-semibold mb-1" style={{ color: daysRemaining <= 3 ? '#dc2626' : '#0284c7' }}>
+                            <p className="small fw-semibold mb-1" style={{ color: isExpired ? '#dc2626' : '#0284c7' }}>
                                 Qolgan muddat
                             </p>
-                            <h2 className="h3 fw-bold mb-0" style={{ color: daysRemaining <= 3 ? '#dc2626' : '#0284c7' }}>
+                            <h2 className="h3 fw-bold mb-0" style={{ color: isExpired ? '#dc2626' : '#0284c7' }}>
                                 {daysRemaining} kun
                             </h2>
-                            {isExpired && (
-                                <p className="small mb-0 mt-2" style={{ color: '#dc2626' }}>
-                                    Davom ettirish uchun to'lov qiling
-                                </p>
-                            )}
                         </div>
 
-                        {/* Package Selection */}
+                        {/* Days input + price */}
                         <div className="mb-4">
-                            <h6 className="fw-bold mb-3">Obuna paketlari</h6>
-                            <div className="d-flex flex-column gap-2">
-                                {packages.map(pkg => (
-                                    <div
-                                        key={pkg.days}
-                                        className={`d-flex align-items-center justify-content-between rounded-3 p-3 ${selectedDays === pkg.days ? 'bg-primary text-white' : 'bg-light'}`}
-                                        style={{ cursor: 'pointer', transition: 'all 0.2s' }}
-                                        onClick={() => setSelectedDays(pkg.days)}
+                            <label className="form-label fw-semibold small mb-2">Necha kun olmoqchisiz?</label>
+                            <div className="input-group mb-2">
+                                <input
+                                    type="number"
+                                    className="form-control rounded-start-3 fw-bold text-center"
+                                    style={{ fontSize: '1.1rem' }}
+                                    min="1"
+                                    max="365"
+                                    value={days}
+                                    onChange={(e) => setDays(Math.max(1, Math.min(365, parseInt(e.target.value) || 1)))}
+                                />
+                                <span className="input-group-text bg-light">kun</span>
+                            </div>
+
+                            {/* Quick select */}
+                            <div className="d-flex gap-2 mb-3">
+                                {[1, 7, 30].map(d => (
+                                    <button
+                                        key={d}
+                                        onClick={() => setDays(d)}
+                                        className={`btn btn-sm flex-fill rounded-3 ${days === d ? 'btn-primary' : 'btn-light'}`}
+                                        style={{ fontWeight: '600', fontSize: '0.8rem' }}
                                     >
-                                        <div className="d-flex align-items-center gap-2">
-                                            {selectedDays === pkg.days ? <CircleDot size={20} /> : <Circle size={20} className="text-muted" />}
-                                            <span className="fw-semibold">{pkg.label}</span>
-                                        </div>
-                                        <span className="fw-bold">
-                                            {(paymentInfo.dailyPrice * pkg.days).toLocaleString()} so'm
-                                        </span>
-                                    </div>
+                                        {d === 1 ? '1 kun' : d === 7 ? '1 hafta' : '1 oy'}
+                                    </button>
                                 ))}
                             </div>
-                        </div>
 
-                        {/* Calculator */}
-                        <div className="bg-light rounded-3 p-3 mb-4">
-                            <div className="d-flex align-items-center justify-content-between mb-2">
-                                <span className="small text-muted">Kunlik narx:</span>
-                                <span className="fw-semibold">{paymentInfo.dailyPrice?.toLocaleString()} so'm</span>
-                            </div>
-                            <div className="d-flex align-items-center justify-content-between mb-2">
-                                <span className="small text-muted">Tanlangan muddat:</span>
-                                <span className="fw-semibold">{selectedDays} kun</span>
-                            </div>
-                            <hr className="my-2" />
-                            <div className="d-flex align-items-center justify-content-between">
-                                <span className="fw-bold">Jami to'lov:</span>
+                            {/* Total */}
+                            <div className="d-flex align-items-center justify-content-between rounded-3 p-3 bg-light">
+                                <span className="text-muted small">
+                                    {paymentInfo.dailyPrice.toLocaleString()} so'm × {days} kun
+                                </span>
                                 <span className="fw-bold text-primary fs-5">
-                                    {(paymentInfo.dailyPrice * selectedDays).toLocaleString()} so'm
+                                    {totalAmount.toLocaleString()} so'm
                                 </span>
                             </div>
                         </div>
 
-                        {/* Custom Days Input */}
-                        <div className="mb-4">
-                            <label className="form-label small fw-semibold">Boshqa muddat (kun)</label>
-                            <div className="input-group">
-                                <input
-                                    type="number"
-                                    className="form-control rounded-start-3"
-                                    min="1"
-                                    max="365"
-                                    value={selectedDays}
-                                    onChange={(e) => setSelectedDays(Math.max(1, Math.min(365, parseInt(e.target.value) || 1)))}
-                                />
-                                <span className="input-group-text bg-light">kun</span>
-                            </div>
-                            <small className="text-muted">Minimal: 1 kun (500 so'm)</small>
-                        </div>
-
-                        {/* Payment Info */}
-                        <div className="bg-light rounded-3 p-3 mb-3">
+                        {/* Card info */}
+                        <div className="bg-light rounded-3 p-3 mb-2">
                             <p className="small text-muted mb-1">Karta raqami</p>
                             <div className="d-flex align-items-center justify-content-between">
-                                <p className="fw-bold font-monospace mb-0 fs-5">{paymentInfo.cardNumber}</p>
+                                <span className="fw-bold font-monospace fs-5">{paymentInfo.cardNumber}</span>
                                 <button onClick={copyCardNumber} className="btn btn-sm btn-outline-primary rounded-2">
                                     {copied ? <Check size={18} /> : <Copy size={18} />}
                                 </button>
                             </div>
                         </div>
 
-                        <div className="row g-3 mb-4">
+                        <div className="row g-2 mb-4">
                             <div className="col-6">
                                 <div className="bg-light rounded-3 p-3">
                                     <p className="small text-muted mb-1">Karta egasi</p>
-                                    <p className="fw-semibold mb-0">{paymentInfo.cardHolder}</p>
+                                    <p className="fw-semibold mb-0 small">{paymentInfo.cardHolder}</p>
                                 </div>
                             </div>
                             <div className="col-6">
                                 <div className="bg-light rounded-3 p-3">
                                     <p className="small text-muted mb-1">To'lov summasi</p>
-                                    <p className="fw-bold text-primary mb-0">{(paymentInfo.dailyPrice * selectedDays).toLocaleString()} so'm</p>
+                                    <p className="fw-bold text-primary mb-0">{totalAmount.toLocaleString()} so'm</p>
                                 </div>
                             </div>
                         </div>
 
-                        <p className="text-muted small mb-3 text-center">
-                            To'lovni amalga oshirgandan so'ng admin bilan bog'laning
+                        {/* Telegram button */}
+                        <p className="text-muted small text-center mb-2">
+                            To'lovdan so'ng chekni Telegramga yuboring
                         </p>
                         <a
-                            href={`tel:${paymentInfo.adminPhone}`}
-                            className="btn btn-success w-100 rounded-3 py-3 d-flex align-items-center justify-content-center gap-2"
+                            href={telegramLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-primary w-100 rounded-3 py-3 d-flex align-items-center justify-content-center gap-2 mb-2"
                         >
-                            <Phone size={20} />
-                            <span className="fw-bold">{paymentInfo.adminPhone}</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                            </svg>
+                            <span className="fw-bold">Chekni @{TELEGRAM_ADMIN} ga yuboring</span>
                         </a>
+
+                        {paymentInfo.adminPhone && (
+                            <a
+                                href={`tel:${paymentInfo.adminPhone}`}
+                                className="btn btn-outline-secondary w-100 rounded-3 py-2 d-flex align-items-center justify-content-center gap-2"
+                            >
+                                <Phone size={16} />
+                                <span>{paymentInfo.adminPhone}</span>
+                            </a>
+                        )}
                     </div>
+
                     {!isExpired && (
                         <div className="modal-footer border-0 pt-0">
                             <button

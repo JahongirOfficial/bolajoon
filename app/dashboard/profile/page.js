@@ -11,7 +11,7 @@ import { Wallet, Calendar, CreditCard, Edit, LogOut, User, Phone, BadgeCheck, Sa
 
 export default function ProfilePage() {
     const { user, logout, getAuthHeader } = useAuth();
-    const { daysRemaining: contextDaysRemaining } = useSubscription();
+    const { daysRemaining: contextDaysRemaining, setShowModal: setShowSubscriptionModal } = useSubscription();
     const { students: cachedStudents, updateStudent: updateStudentInCache } = useData();
     const [saving, setSaving] = useState(false);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -22,7 +22,6 @@ export default function ProfilePage() {
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [loadingStudents, setLoadingStudents] = useState(false);
     const [alertModal, setAlertModal] = useState({ show: false, title: '', message: '', type: 'success' });
-    const [balance, setBalance] = useState(0);
     const [daysRemaining, setDaysRemaining] = useState(contextDaysRemaining);
     const [topUpAmount, setTopUpAmount] = useState(10000);
     const [paymentInfo, setPaymentInfo] = useState(null);
@@ -81,7 +80,6 @@ export default function ProfilePage() {
             });
             const data = await res.json();
             if (data.success && data.user) {
-                setBalance(data.user.balance || 0);
                 // Update local daysRemaining state
                 if (data.user.daysRemaining !== undefined) {
                     setDaysRemaining(data.user.daysRemaining);
@@ -405,79 +403,8 @@ export default function ProfilePage() {
                         style={{ marginTop: '-70px', position: 'relative', zIndex: 2 }}
                     >
                         <div className="row g-3 mb-3">
-                            {/* Balance Card */}
-                            <div className="col-6">
-                                <div 
-                                    className="card border-0 shadow-lg rounded-4 h-100 position-relative overflow-hidden"
-                                    style={{
-                                        background: 'linear-gradient(135deg, #DCFCE7 0%, #BBF7D0 100%)',
-                                        transition: 'transform 0.2s'
-                                    }}
-                                    onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
-                                    onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-                                >
-                                    <div className="card-body p-2">
-                                        {/* Horizontal Layout with responsive wrapping */}
-                                        <div className="d-flex align-items-center gap-2 mb-2">
-                                            <div 
-                                                className="rounded-2 d-flex align-items-center justify-content-center"
-                                                style={{
-                                                    width: '32px',
-                                                    height: '32px',
-                                                    backgroundColor: 'rgba(22,163,74,0.15)',
-                                                    flexShrink: 0
-                                                }}
-                                            >
-                                                <Wallet size={16} strokeWidth={2.5} style={{ color: '#16a34a' }} />
-                                            </div>
-                                            <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-baseline gap-1 flex-wrap" style={{ minWidth: 0, flex: 1 }}>
-                                                <span style={{ fontSize: '0.85rem', fontWeight: '500', color: '#166534', whiteSpace: 'nowrap' }}>Balans:</span>
-                                                <div className="d-flex align-items-baseline gap-1 flex-wrap">
-                                                    <span className="fw-bold" style={{ fontSize: '1.3rem', color: '#16a34a', wordBreak: 'break-all' }}>{balance.toLocaleString()}</span>
-                                                    <span style={{ fontSize: '0.85rem', color: '#166534', whiteSpace: 'nowrap' }}>so'm</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        
-                                        {/* To'ldirish button inside card */}
-                                        <button
-                                            onClick={() => setShowTopUpModal(true)}
-                                            className="btn btn-sm w-100 text-white border-0 rounded-2 d-flex align-items-center justify-content-center gap-1"
-                                            style={{
-                                                background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
-                                                fontSize: '0.85rem',
-                                                padding: '4px 10px',
-                                                transition: 'all 0.2s',
-                                                fontWeight: '600'
-                                            }}
-                                            onMouseOver={(e) => {
-                                                e.currentTarget.style.transform = 'translateY(-1px)';
-                                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(22,163,74,0.3)';
-                                            }}
-                                            onMouseOut={(e) => {
-                                                e.currentTarget.style.transform = 'translateY(0)';
-                                                e.currentTarget.style.boxShadow = 'none';
-                                            }}
-                                        >
-                                            <CreditCard size={12} strokeWidth={2.5} />
-                                            Balans to'ldirish
-                                        </button>
-                                    </div>
-                                    <div 
-                                        className="position-absolute rounded-circle"
-                                        style={{
-                                            width: '60px',
-                                            height: '60px',
-                                            background: 'rgba(255,255,255,0.3)',
-                                            bottom: '-20px',
-                                            right: '-15px'
-                                        }}
-                                    />
-                                </div>
-                            </div>
-
                             {/* Subscription Card */}
-                            <div className="col-6">
+                            <div className="col-12">
                                 <div 
                                     className="card border-0 shadow-lg rounded-4 h-100 position-relative overflow-hidden"
                                     style={{
@@ -489,23 +416,43 @@ export default function ProfilePage() {
                                 >
                                     <div className="card-body p-2">
                                         {/* Horizontal Layout */}
-                                        <div className="d-flex align-items-center gap-2 mb-2">
-                                            <div 
-                                                className="rounded-2 d-flex align-items-center justify-content-center"
+                                        <div className="d-flex align-items-center justify-content-between mb-2">
+                                            <div className="d-flex align-items-center gap-2">
+                                                <div 
+                                                    className="rounded-2 d-flex align-items-center justify-content-center"
+                                                    style={{
+                                                        width: '32px',
+                                                        height: '32px',
+                                                        backgroundColor: 'rgba(217,119,6,0.15)',
+                                                        flexShrink: 0
+                                                    }}
+                                                >
+                                                    <Calendar size={16} strokeWidth={2.5} style={{ color: '#d97706' }} />
+                                                </div>
+                                                <div className="d-flex align-items-baseline gap-1 flex-wrap">
+                                                    <span style={{ fontSize: '0.85rem', fontWeight: '500', color: '#92400e' }}>Obuna:</span>
+                                                    <span className="fw-bold" style={{ fontSize: '1.3rem', color: '#d97706' }}>{daysRemaining}</span>
+                                                    <span style={{ fontSize: '0.85rem', color: '#92400e' }}>kun</span>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => setShowSubscriptionModal(true)}
+                                                className="btn border-0 d-flex align-items-center justify-content-center"
                                                 style={{
-                                                    width: '32px',
-                                                    height: '32px',
-                                                    backgroundColor: 'rgba(217,119,6,0.15)',
-                                                    flexShrink: 0
+                                                    backgroundColor: '#d97706',
+                                                    color: '#fff',
+                                                    borderRadius: '8px',
+                                                    padding: '6px 12px',
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: '600',
+                                                    boxShadow: '0 2px 4px rgba(217,119,6,0.2)',
+                                                    transition: 'all 0.2s'
                                                 }}
+                                                onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                                                onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                                             >
-                                                <Calendar size={16} strokeWidth={2.5} style={{ color: '#d97706' }} />
-                                            </div>
-                                            <div className="d-flex align-items-baseline gap-1 flex-wrap">
-                                                <span style={{ fontSize: '0.85rem', fontWeight: '500', color: '#92400e' }}>Obuna:</span>
-                                                <span className="fw-bold" style={{ fontSize: '1.3rem', color: '#d97706' }}>{daysRemaining}</span>
-                                                <span style={{ fontSize: '0.85rem', color: '#92400e' }}>kun</span>
-                                            </div>
+                                                To'ldirish
+                                            </button>
                                         </div>
                                     </div>
                                     <div 
@@ -925,48 +872,12 @@ export default function ProfilePage() {
                                     >
                                         <Wallet size={20} strokeWidth={2.5} />
                                     </div>
-                                    <h6 className="fw-bold mb-0" style={{ fontSize: '0.95rem' }}>Balansni to'ldirish</h6>
+                                    <h6 className="fw-bold mb-0" style={{ fontSize: '0.95rem' }}>Obunani to'ldirish</h6>
                                     <p className="mb-0 opacity-90" style={{ fontSize: '0.7rem' }}>Xavfsiz va tezkor to'lov</p>
                                 </div>
                             </div>
 
                             <div className="modal-body p-3">
-                                {/* Current Balance Card */}
-                                <div 
-                                    className="rounded-3 p-2 mb-2 position-relative overflow-hidden"
-                                    style={{
-                                        background: 'linear-gradient(135deg, #15803d 0%, #166534 100%)',
-                                    }}
-                                >
-                                    <div className="text-center position-relative" style={{ zIndex: 1 }}>
-                                        <p className="mb-1 fw-medium text-white" style={{ fontSize: '0.65rem', opacity: 0.9 }}>Joriy balans</p>
-                                        <h5 className="fw-bold mb-0 text-white" style={{ fontSize: '1.3rem' }}>
-                                            {balance.toLocaleString()}
-                                        </h5>
-                                        <p className="mb-0 fw-medium text-white" style={{ fontSize: '0.7rem', opacity: 0.9 }}>so'm</p>
-                                    </div>
-                                    <div 
-                                        className="position-absolute rounded-circle"
-                                        style={{
-                                            width: '50px',
-                                            height: '50px',
-                                            background: 'rgba(255,255,255,0.15)',
-                                            top: '-15px',
-                                            right: '-15px'
-                                        }}
-                                    />
-                                    <div 
-                                        className="position-absolute rounded-circle"
-                                        style={{
-                                            width: '35px',
-                                            height: '35px',
-                                            background: 'rgba(255,255,255,0.1)',
-                                            bottom: '-12px',
-                                            left: '-12px'
-                                        }}
-                                    />
-                                </div>
-
                                 {/* Amount Input */}
                                 <div className="mb-3">
                                     <label className="form-label fw-bold mb-2" style={{ color: '#166534', fontSize: '0.95rem' }}>
@@ -1103,6 +1014,33 @@ export default function ProfilePage() {
                                             Xavfsiz to'lov
                                         </span>
                                     </div>
+                                </div>
+
+                                {/* Contact Support */}
+                                <div className="mt-4">
+                                    <p className="text-muted small mb-2 text-center" style={{ fontSize: '0.75rem' }}>
+                                        Muammo bo'lsa Telegramdan bog'laning
+                                    </p>
+                                    <a
+                                        href="https://t.me/namozjon_cdo"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="btn w-100 rounded-3 py-2 d-flex align-items-center justify-content-center gap-2 mb-2"
+                                        style={{ backgroundColor: '#e0f2fe', color: '#0284c7', fontSize: '0.85rem', fontWeight: '600' }}
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+                                        <span>@namozjon_cdo</span>
+                                    </a>
+                                    {paymentInfo?.adminPhone && (
+                                        <a
+                                            href={`tel:${paymentInfo.adminPhone}`}
+                                            className="btn w-100 rounded-3 py-2 d-flex align-items-center justify-content-center gap-2"
+                                            style={{ backgroundColor: '#f1f5f9', color: '#475569', fontSize: '0.85rem', fontWeight: '600' }}
+                                        >
+                                            <Phone size={14} />
+                                            <span>{paymentInfo.adminPhone}</span>
+                                        </a>
+                                    )}
                                 </div>
                             </div>
                         </div>

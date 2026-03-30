@@ -65,7 +65,7 @@ export async function PUT(request, { params }) {
         }
 
         const body = await request.json();
-        const { name, phone, password, role, balance, subscriptionEndDate, subscriptionStatus } = body;
+        const { name, phone, password, role, daysToAdd, subscriptionEndDate, subscriptionStatus } = body;
 
         // Basic updates
         if (name) teacher.name = name;
@@ -76,36 +76,21 @@ export async function PUT(request, { params }) {
             teacher.password = password;
         }
 
-        // 🔥 OPTIMIZED: Auto-purchase logic only if balance is being set
-        if (balance !== undefined) {
+        // Add subscription days directly
+        if (daysToAdd && daysToAdd > 0) {
             const now = new Date();
-            let currentDaysRemaining = 0;
-            
-            // Quick calculation without extra queries
-            if (teacher.subscriptionStatus === 'active' && teacher.subscriptionEndDate) {
-                const endDate = new Date(teacher.subscriptionEndDate);
-                if (endDate > now) {
-                    currentDaysRemaining = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
-                }
-            }
+            let newEndDate;
 
-            // Auto-convert to days only if days = 0
-            if (currentDaysRemaining === 0 && balance >= 500) {
-                // 🚀 FAST: Use default 500 instead of DB query
-                const dailyPrice = 500;
-                const daysToAdd = Math.floor(balance / dailyPrice);
-                const finalBalance = balance - (daysToAdd * dailyPrice);
-
-                const newEndDate = new Date(now);
-                newEndDate.setDate(newEndDate.getDate() + daysToAdd);
-
-                teacher.balance = finalBalance;
-                teacher.subscriptionStatus = 'active';
-                teacher.subscriptionEndDate = newEndDate;
-                teacher.lastPaymentDate = now;
+            if (teacher.subscriptionStatus === 'active' && teacher.subscriptionEndDate && new Date(teacher.subscriptionEndDate) > now) {
+                newEndDate = new Date(teacher.subscriptionEndDate);
             } else {
-                teacher.balance = balance;
+                newEndDate = new Date(now);
             }
+            newEndDate.setDate(newEndDate.getDate() + daysToAdd);
+
+            teacher.subscriptionStatus = 'active';
+            teacher.subscriptionEndDate = newEndDate;
+            teacher.lastPaymentDate = now;
         }
 
         // Manual subscription override
@@ -130,7 +115,6 @@ export async function PUT(request, { params }) {
                 name: teacher.name,
                 phone: teacher.phone,
                 role: teacher.role,
-                balance: teacher.balance,
                 subscriptionEndDate: teacher.subscriptionEndDate,
                 subscriptionStatus: teacher.subscriptionStatus,
                 daysRemaining: teacher.getDaysRemaining(),

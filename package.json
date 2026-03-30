@@ -8,10 +8,7 @@
     "build": "next build",
     "start": "NODE_ENV=production node server.js",
     "lint": "next lint",
-    "cron": "node scripts/setup-cron.mjs",
-    "test:telegram:register": "node scripts/test-telegram-registration.mjs",
-    "test:telegram:report": "node scripts/test-telegram-daily-report.mjs",
-    "test:telegram:real": "node scripts/test-real-daily-report.mjs"
+    "cron": "node scripts/setup-cron.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.20",

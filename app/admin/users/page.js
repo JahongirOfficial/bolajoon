@@ -17,14 +17,14 @@ export default function UsersPage() {
     const [viewModal, setViewModal] = useState({ show: false, user: null });
     const [editModal, setEditModal] = useState({ show: false, user: null, loading: false });
     const [subscriptionModal, setSubscriptionModal] = useState({ show: false, user: null });
-    const [balanceModal, setBalanceModal] = useState({ show: false, user: null });
+    const [daysModal, setDaysModal] = useState({ show: false, user: null });
     const [studentsModal, setStudentsModal] = useState({ show: false, user: null, students: [], loading: false });
     const [deleting, setDeleting] = useState(false);
     const [alertModal, setAlertModal] = useState({ show: false, title: '', message: '', type: 'success' });
     const [activatingId, setActivatingId] = useState(null);
-    const [addingBalanceId, setAddingBalanceId] = useState(null);
+    const [addingDaysId, setAddingDaysId] = useState(null);
     const [selectedDays, setSelectedDays] = useState(30);
-    const [balanceAmount, setBalanceAmount] = useState(10000);
+    const [daysToAdd, setDaysToAdd] = useState(30);
     const [editForm, setEditForm] = useState({
         name: '',
         phone: '',
@@ -254,75 +254,71 @@ export default function UsersPage() {
         }
     };
 
-    const openBalanceModal = (user) => {
-        setBalanceAmount(user.balance || 0);
-        setBalanceModal({ show: true, user });
+    const openDaysModal = (user) => {
+        setDaysToAdd(30);
+        setDaysModal({ show: true, user });
     };
 
-    const handleAddBalance = async () => {
-        const user = balanceModal.user;
+    const handleAddDays = async () => {
+        const user = daysModal.user;
         if (!user) return;
 
-        if (balanceAmount < 0) {
+        if (daysToAdd < 1) {
             setAlertModal({
                 show: true,
                 title: 'Xatolik',
-                message: 'Balans manfiy bo\'lishi mumkin emas',
+                message: 'Kamida 1 kun bo\'lishi kerak',
                 type: 'danger'
             });
             return;
         }
 
-        setAddingBalanceId(user._id);
+        setAddingDaysId(user._id);
         try {
             const res = await fetch(`/api/teachers/${user._id}`, {
                 method: 'PUT',
                 headers: getAuthHeader(),
-                body: JSON.stringify({ balance: balanceAmount })
+                body: JSON.stringify({ daysToAdd })
             });
             const data = await res.json();
             if (data.success) {
-                // 🔥 OPTIMISTIC UPDATE: Update only this user in state (fast!)
-                setUsers(prevUsers => prevUsers.map(u => 
-                    u._id === user._id 
-                        ? { 
-                            ...u, 
-                            balance: data.user.balance,
+                setUsers(prevUsers => prevUsers.map(u =>
+                    u._id === user._id
+                        ? {
+                            ...u,
                             subscriptionEndDate: data.user.subscriptionEndDate,
                             subscriptionStatus: data.user.subscriptionStatus,
                             daysRemaining: data.user.daysRemaining
                         }
                         : u
                 ));
-                
-                // Close modal immediately
-                setBalanceModal({ show: false, user: null });
-                
-                // Show success message
+
+                setDaysModal({ show: false, user: null });
+
                 setAlertModal({
                     show: true,
                     title: 'Muvaffaqiyatli',
-                    message: `${user.name} ning balansi ${balanceAmount.toLocaleString()} so'mga o'zgartirildi`,
+                    message: `${user.name} ga ${daysToAdd} kun qo'shildi`,
                     type: 'success'
                 });
             } else {
                 setAlertModal({
                     show: true,
                     title: 'Xatolik',
-                    message: data.error || 'Balansni o\'zgartirishda xatolik',
+                    message: data.error || 'Kun qo\'shishda xatolik',
                     type: 'danger'
                 });
             }
         } catch (error) {
-            console.error('Failed to update balance:', error);
+            console.error('Failed to add days:', error);
             setAlertModal({
                 show: true,
                 title: 'Xatolik',
-                message: 'Balansni o\'zgartirishda xatolik',
+                message: 'Kun qo\'shishda xatolik',
                 type: 'danger'
             });
         } finally {
-            setAddingBalanceId(null);
+            setAddingDaysId(null);
         }
     };
 
@@ -633,7 +629,7 @@ export default function UsersPage() {
                                                     <span className="d-none d-lg-inline">Ko'rish</span>
                                                 </button>
                                                 <button
-                                                    onClick={() => openBalanceModal(user)}
+                                                    onClick={() => openDaysModal(user)}
                                                     className="btn btn-sm rounded-3"
                                                     style={{ 
                                                         backgroundColor: '#ff9500',
@@ -641,7 +637,7 @@ export default function UsersPage() {
                                                         color: 'white',
                                                         padding: '6px 10px'
                                                     }}
-                                                    title="Balans"
+                                                    title="Kun qo'shish"
                                                 >
                                                     <CreditCard size={16} />
                                                 </button>
@@ -988,61 +984,53 @@ export default function UsersPage() {
                 </div>
             )}
 
-            {/* Balance Modal */}
-            {balanceModal.show && (
+            {/* Days Modal */}
+            {daysModal.show && (
                 <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
                     <div className="modal-dialog modal-dialog-centered">
                         <div className="modal-content rounded-4 border-0">
                             <div className="modal-header border-0 pb-0">
                                 <h5 className="modal-title fw-bold d-flex align-items-center gap-2">
                                     <CreditCard className="text-warning" size={20} />
-                                    Balansni tahrirlash
+                                    Kun qo'shish
                                 </h5>
                                 <button
                                     type="button"
                                     className="btn-close"
-                                    onClick={() => setBalanceModal({ show: false, user: null })}
+                                    onClick={() => setDaysModal({ show: false, user: null })}
                                 ></button>
                             </div>
                             <div className="modal-body">
                                 <p className="text-muted mb-3">
-                                    <strong>{balanceModal.user?.name}</strong> ning balansini o'zgartirish:
+                                    <strong>{daysModal.user?.name}</strong> ga obuna kunlari qo'shish:
                                 </p>
-
-                                {/* Current Balance */}
-                                <div className="bg-light rounded-3 p-3 mb-4 text-center">
-                                    <p className="small text-muted mb-1">Joriy balans</p>
-                                    <h4 className="fw-bold text-warning mb-0">
-                                        {(balanceModal.user?.balance || 0).toLocaleString()} so'm
-                                    </h4>
-                                </div>
 
                                 {/* Amount Input */}
                                 <div className="mb-4">
-                                    <label className="form-label small fw-semibold">Yangi balans</label>
+                                    <label className="form-label small fw-semibold">Necha kun?</label>
                                     <div className="input-group input-group-lg">
                                         <input
                                             type="number"
                                             className="form-control border-0 bg-light text-center fw-bold"
-                                            value={balanceAmount}
-                                            onChange={(e) => setBalanceAmount(Math.max(0, parseInt(e.target.value) || 0))}
-                                            min={0}
-                                            step={1000}
+                                            value={daysToAdd}
+                                            onChange={(e) => setDaysToAdd(Math.max(1, parseInt(e.target.value) || 1))}
+                                            min={1}
+                                            max={365}
                                         />
-                                        <span className="input-group-text bg-light border-0">so'm</span>
+                                        <span className="input-group-text bg-light border-0">kun</span>
                                     </div>
                                 </div>
 
-                                {/* Quick Amounts */}
+                                {/* Quick Days */}
                                 <p className="small text-muted mb-2">Tezkor tanlash:</p>
                                 <div className="d-flex flex-wrap gap-2 mb-4">
-                                    {[0, 5000, 10000, 20000, 50000, 100000].map(amount => (
+                                    {[1, 7, 30, 90, 180, 365].map(days => (
                                         <button
-                                            key={amount}
-                                            onClick={() => setBalanceAmount(amount)}
-                                            className={`btn btn-sm rounded-pill px-3 ${balanceAmount === amount ? 'btn-warning' : 'btn-outline-secondary'}`}
+                                            key={days}
+                                            onClick={() => setDaysToAdd(days)}
+                                            className={`btn btn-sm rounded-pill px-3 ${daysToAdd === days ? 'btn-warning' : 'btn-outline-secondary'}`}
                                         >
-                                            {amount === 0 ? '0' : `${(amount / 1000).toLocaleString()} ming`}
+                                            {days === 1 ? '1 kun' : days === 7 ? '1 hafta' : days === 30 ? '1 oy' : days === 90 ? '3 oy' : days === 180 ? '6 oy' : '1 yil'}
                                         </button>
                                     ))}
                                 </div>
@@ -1051,22 +1039,22 @@ export default function UsersPage() {
                                 <button
                                     type="button"
                                     className="btn btn-light rounded-3"
-                                    onClick={() => setBalanceModal({ show: false, user: null })}
+                                    onClick={() => setDaysModal({ show: false, user: null })}
                                 >
                                     Bekor qilish
                                 </button>
                                 <button
                                     type="button"
                                     className="btn btn-warning rounded-3 d-flex align-items-center gap-2"
-                                    onClick={handleAddBalance}
-                                    disabled={addingBalanceId}
+                                    onClick={handleAddDays}
+                                    disabled={addingDaysId}
                                 >
-                                    {addingBalanceId ? (
+                                    {addingDaysId ? (
                                         <span className="spinner-border spinner-border-sm"></span>
                                     ) : (
                                         <CreditCard size={18} />
                                     )}
-                                    Saqlash
+                                    Qo'shish
                                 </button>
                             </div>
                         </div>
