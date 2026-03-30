@@ -144,7 +144,7 @@ export default function UsersPage() {
     };
 
     const openSubscriptionModal = (user) => {
-        setSelectedDays(user.daysRemaining || 0);
+        setSelectedDays(0);
         setSubscriptionModal({ show: true, user });
     };
 
@@ -192,36 +192,34 @@ export default function UsersPage() {
 
         setActivatingId(user._id);
         try {
-            // Calculate new end date
-            const now = new Date();
-            const newEndDate = new Date(now);
-            newEndDate.setDate(newEndDate.getDate() + selectedDays);
+            // Use daysToAdd so API correctly appends to existing subscription
+            const body = selectedDays === 0
+                ? { subscriptionStatus: 'expired' }
+                : { daysToAdd: selectedDays };
 
             const res = await fetch(`/api/teachers/${user._id}`, {
                 method: 'PUT',
                 headers: getAuthHeader(),
-                body: JSON.stringify({ 
-                    subscriptionEndDate: newEndDate.toISOString(),
-                    subscriptionStatus: selectedDays > 0 ? 'active' : 'expired'
-                })
+                body: JSON.stringify(body)
             });
             const data = await res.json();
             if (data.success) {
-                // 🔥 OPTIMISTIC UPDATE: Update only this user in state (fast!)
-                setUsers(prevUsers => prevUsers.map(u => 
-                    u._id === user._id 
-                        ? { 
-                            ...u, 
-                            subscriptionEndDate: newEndDate,
-                            subscriptionStatus: selectedDays > 0 ? 'active' : 'expired',
-                            daysRemaining: selectedDays
+                // Update state with real values from server response
+                const newDays = data.user?.daysRemaining ?? 0;
+                setUsers(prevUsers => prevUsers.map(u =>
+                    u._id === user._id
+                        ? {
+                            ...u,
+                            subscriptionEndDate: data.user?.subscriptionEndDate,
+                            subscriptionStatus: data.user?.subscriptionStatus,
+                            daysRemaining: newDays
                         }
                         : u
                 ));
-                
-                const message = selectedDays === 0 
-                    ? `${user.name} ning obunasi to'xtatildi` 
-                    : `${user.name} ning obunasi ${selectedDays} kunga o'zgartirildi`;
+
+                const message = selectedDays === 0
+                    ? `${user.name} ning obunasi to'xtatildi`
+                    : `${user.name} ga ${selectedDays} kun qo'shildi (jami: ${newDays} kun)`;
                 
                 // Close modal immediately
                 setSubscriptionModal({ show: false, user: null });
@@ -930,7 +928,7 @@ export default function UsersPage() {
                                 </div>
 
                                 <div className="mb-4">
-                                    <label className="form-label small fw-semibold">Yangi kun soni</label>
+                                    <label className="form-label small fw-semibold">Necha kun qo'shish?</label>
                                     <div className="input-group">
                                         <input
                                             type="number"
