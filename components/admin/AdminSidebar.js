@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, Users, Video, Gift, BarChart3, Settings, Menu, X, ArrowLeftRight, LogOut, BookOpen, MessageSquare, CreditCard, UserCircle, MousePointerClick } from 'lucide-react';
+import { LayoutDashboard, Users, Video, Gift, BarChart3, Settings, Menu, X, ArrowLeftRight, LogOut, BookOpen, MessageSquare, CreditCard, UserCircle, MousePointerClick, TrendingUp } from 'lucide-react';
 
 export default function AdminSidebar() {
     const pathname = usePathname();
@@ -42,6 +42,7 @@ export default function AdminSidebar() {
         { href: '/admin/sms', icon: MessageSquare, label: 'SMS Yuborish' },
         { href: '/admin/analytics', icon: MousePointerClick, label: 'Foydalanuvchi tahlili' },
         { href: '/admin/statistics', icon: BarChart3, label: 'Statistika' },
+        { href: '/admin/growth', icon: TrendingUp, label: 'O\'sish va Faollik' },
         { href: '/admin/settings', icon: Settings, label: 'Sozlamalar' },
         { href: '/admin/profile', icon: UserCircle, label: 'Profil' },
     ];

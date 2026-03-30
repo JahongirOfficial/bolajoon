@@ -61,6 +61,15 @@ const UserSchema = new mongoose.Schema({
         type: [String],
         default: []
     },
+    // Activity tracking
+    lastLogin: {
+        type: Date,
+        default: null
+    },
+    lastActivityAt: {
+        type: Date,
+        default: null
+    },
 }, {
     timestamps: true
 });

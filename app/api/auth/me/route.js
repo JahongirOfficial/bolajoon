@@ -16,7 +16,11 @@ export async function GET(request) {
 
     // Get fresh user data from database
     await dbConnect();
-    const user = await User.findById(auth.user._id);
+    const user = await User.findByIdAndUpdate(
+        auth.user._id,
+        { lastActivityAt: new Date() },
+        { new: true }
+    );
 
     if (!user) {
         return errorResponse('Foydalanuvchi topilmadi', 404);

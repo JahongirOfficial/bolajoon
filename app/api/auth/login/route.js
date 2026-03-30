@@ -49,6 +49,9 @@ export async function POST(request) {
             return errorResponse('Telefon raqam yoki parol noto\'g\'ri', 401);
         }
 
+        // Update lastLogin
+        await User.updateOne({ _id: user._id }, { lastLogin: new Date() });
+
         // Generate token
         const token = generateToken(user);
 
