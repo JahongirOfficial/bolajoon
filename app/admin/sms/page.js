@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { MessageSquare, Send, Users, Copy, Check, Filter, RefreshCw } from 'lucide-react';
+import { MessageSquare, Send, Users, Copy, Check, Filter, RefreshCw, Download } from 'lucide-react';
 
 export default function SMSPage() {
     const { getAuthHeader } = useAuth();
@@ -13,6 +13,36 @@ export default function SMSPage() {
     const [filter, setFilter] = useState('all');
     const [copiedMessage, setCopiedMessage] = useState(false);
     const [copiedPhones, setCopiedPhones] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+
+    // SMS shablonlari
+    const templates = [
+        {
+            name: 'Xush kelibsiz',
+            text: 'Assalomu alaykum! Bolajoon.uz platformasiga xush kelibsiz. Platformamizda o\'qish uchun darsliklar va interaktiv o\'yinlar mavjud.'
+        },
+        {
+            name: 'Obuna tugadi',
+            text: 'Hurmatli foydalanuvchi! Sizning obunangiz tugadi. Davom etish uchun obunani yangilang: bolajoon.uz'
+        },
+        {
+            name: 'Yangi dars',
+            text: 'Yangi dars qo\'shildi! Platformaga kirib, yangi darslarni o\'rganing. bolajoon.uz'
+        },
+        {
+            name: 'Eslatma',
+            text: 'Salom! Platformamizda yangi imkoniyatlar mavjud. Tizimga kirib ko\'ring: bolajoon.uz'
+        }
+    ];
+
+    useEffect(() => {
+        // Mobil qurilmani aniqlash
+        const checkMobile = () => {
+            const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            setIsMobile(mobile);
+        };
+        checkMobile();
+    }, []);
 
     useEffect(() => {
         fetchUsers();
@@ -78,11 +108,35 @@ export default function SMSPage() {
             return;
         }
 
-        const phoneNumbers = selectedPhones.join(',');
-        const encodedMessage = encodeURIComponent(message.trim());
-        const smsUrl = `sms:${phoneNumbers}?body=${encodedMessage}`;
-        
-        window.location.href = smsUrl;
+        // Agar bitta raqam bo'lsa - to'g'ridan-to'g'ri SMS ilovasini ochish
+        if (selectedPhones.length === 1) {
+            const phoneNumber = selectedPhones[0].replace(/[^0-9+]/g, '');
+            const encodedMessage = encodeURIComponent(message.trim());
+            const smsUrl = `sms:${phoneNumber}?body=${encodedMessage}`;
+            window.open(smsUrl, '_blank');
+            return;
+        }
+
+        // Ko'p raqamlar uchun - har biriga alohida SMS yuborish
+        const confirmed = confirm(
+            `${selectedPhones.length} ta foydalanuvchiga SMS yuboriladi.\n` +
+            `Har bir raqam uchun SMS ilovasi ochiladi.\n\n` +
+            `Davom etasizmi?`
+        );
+
+        if (!confirmed) return;
+
+        // Har bir raqam uchun ketma-ket SMS ilovasini ochish
+        selectedPhones.forEach((phone, index) => {
+            setTimeout(() => {
+                const phoneNumber = phone.replace(/[^0-9+]/g, '');
+                const encodedMessage = encodeURIComponent(message.trim());
+                const smsUrl = `sms:${phoneNumber}?body=${encodedMessage}`;
+                window.open(smsUrl, '_blank');
+            }, index * 1000); // Har bir SMS uchun 1 soniya kutish
+        });
+
+        alert(`${selectedPhones.length} ta SMS ilovasi ochilmoqda. Har birida xabarni yuborishingiz kerak.`);
     };
 
     const copyPhoneNumbers = () => {
@@ -90,7 +144,7 @@ export default function SMSPage() {
             .filter(user => selectedUsers.includes(user._id))
             .map(user => user.phone)
             .filter(phone => phone)
-            .join(', ');
+            .join('\n'); // Har bir raqam yangi qatorda
 
         if (!selectedPhones) {
             alert('Telefon raqamlar topilmadi');
@@ -103,6 +157,30 @@ export default function SMSPage() {
         }).catch(() => {
             alert('Nusxalashda xatolik');
         });
+    };
+
+    const downloadPhoneNumbers = () => {
+        const selectedPhones = users
+            .filter(user => selectedUsers.includes(user._id))
+            .map(user => `${user.name},${user.phone}`)
+            .filter(line => line.includes(',+'));
+
+        if (selectedPhones.length === 0) {
+            alert('Telefon raqamlar topilmadi');
+            return;
+        }
+
+        const csvContent = 'Ism,Telefon\n' + selectedPhones.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', `telefon-raqamlar-${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     const copyMessage = () => {
@@ -157,6 +235,22 @@ export default function SMSPage() {
                     Yangilash
                 </button>
             </div>
+
+            {/* Desktop ogohlantirish */}
+            {!isMobile && (
+                <div className="alert alert-warning rounded-3 mb-4 d-flex align-items-start gap-3">
+                    <MessageSquare size={24} className="flex-shrink-0 mt-1" />
+                    <div>
+                        <h6 className="fw-bold mb-2">Desktop kompyuterda ishlatyapsiz</h6>
+                        <p className="mb-2">SMS ilovasi faqat mobil qurilmalarda ochiladi. Desktop da ishlatish uchun:</p>
+                        <ul className="mb-0 ps-3">
+                            <li>Telefon raqamlarni nusxalang va qo'lda SMS yuboring</li>
+                            <li>Yoki CSV faylga yuklab, keyin mobil qurilmadan foydalaning</li>
+                            <li>Yoki mobil qurilmadan bu sahifani oching</li>
+                        </ul>
+                    </div>
+                </div>
+            )}
 
             {/* Stats */}
             <div className="row g-3 mb-4">
@@ -228,12 +322,29 @@ export default function SMSPage() {
                             
                             <div className="mb-3">
                                 <label className="form-label fw-medium small">Xabar matni</label>
+                                
+                                {/* Shablonlar */}
+                                <div className="mb-2">
+                                    <div className="d-flex gap-2 flex-wrap">
+                                        {templates.map((template, index) => (
+                                            <button
+                                                key={index}
+                                                className="btn btn-sm btn-outline-secondary rounded-pill"
+                                                onClick={() => setMessage(template.text)}
+                                                type="button"
+                                            >
+                                                {template.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
                                 <textarea
                                     className="form-control rounded-3 border-2"
                                     rows="10"
                                     value={message}
                                     onChange={(e) => setMessage(e.target.value)}
-                                    placeholder="SMS xabaringizni shu yerga yozing..."
+                                    placeholder="SMS xabaringizni shu yerga yozing yoki yuqoridagi shablonlardan birini tanlang..."
                                     maxLength={500}
                                     style={{ resize: 'none' }}
                                 />
@@ -256,20 +367,35 @@ export default function SMSPage() {
                             </div>
 
                             <div className="bg-light rounded-3 p-3 mb-3">
-                                <div className="d-flex justify-content-between align-items-center">
+                                <div className="d-flex justify-content-between align-items-center mb-2">
                                     <div>
                                         <p className="small text-muted mb-0">Tanlangan foydalanuvchilar</p>
                                         <p className="fw-bold mb-0 text-primary">{selectedUsers.length} ta</p>
                                     </div>
                                     {selectedUsers.length > 0 && (
-                                        <button
-                                            className="btn btn-sm btn-outline-primary rounded-2 d-flex align-items-center gap-1"
-                                            onClick={copyPhoneNumbers}
-                                        >
-                                            {copiedPhones ? <Check size={14} /> : <Copy size={14} />}
-                                        </button>
+                                        <div className="d-flex gap-2">
+                                            <button
+                                                className="btn btn-sm btn-outline-primary rounded-2 d-flex align-items-center gap-1"
+                                                onClick={copyPhoneNumbers}
+                                                title="Raqamlarni nusxalash"
+                                            >
+                                                {copiedPhones ? <Check size={14} /> : <Copy size={14} />}
+                                            </button>
+                                            <button
+                                                className="btn btn-sm btn-outline-success rounded-2 d-flex align-items-center gap-1"
+                                                onClick={downloadPhoneNumbers}
+                                                title="CSV faylga yuklash"
+                                            >
+                                                <Download size={14} />
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
+                                {selectedUsers.length > 0 && (
+                                    <small className="text-muted">
+                                        Raqamlarni nusxalash yoki CSV faylga yuklash mumkin
+                                    </small>
+                                )}
                             </div>
 
                             <button
@@ -278,13 +404,25 @@ export default function SMSPage() {
                                 disabled={!message.trim() || selectedUsers.length === 0}
                             >
                                 <Send size={20} />
-                                <span className="fw-semibold">SMS Ilovasida Ochish</span>
+                                <span className="fw-semibold">
+                                    {selectedUsers.length === 1 
+                                        ? 'SMS Ilovasida Ochish' 
+                                        : `${selectedUsers.length} ta SMS Yuborish`}
+                                </span>
                             </button>
 
                             <div className="alert alert-info rounded-3 mb-0 small">
                                 <div className="d-flex align-items-start gap-2">
                                     <MessageSquare size={16} className="flex-shrink-0 mt-1" />
-                                    <p className="mb-0">Tugma bosilganda telefondagi SMS ilovasi ochiladi va tanlangan raqamlar hamda xabar avtomatik to'ldiriladi</p>
+                                    <div>
+                                        <p className="mb-1 fw-semibold">Qanday ishlaydi:</p>
+                                        <ul className="mb-0 ps-3">
+                                            <li>1 ta raqam: SMS ilovasi ochiladi, xabar tayyor</li>
+                                            <li>Ko'p raqamlar: Har bir raqam uchun alohida SMS ilovasi ochiladi</li>
+                                            <li>Har bir SMS ni qo'lda yuborishingiz kerak</li>
+                                            <li>Bu usul 100% tekin (telefon SMS balansidan foydalanadi)</li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
                         </div>

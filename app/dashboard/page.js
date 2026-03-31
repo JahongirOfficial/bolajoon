@@ -28,7 +28,7 @@ const IconComponent = ({ name, ...props }) => {
 
 export default function DashboardPage() {
     const { dashboard, initialLoading } = useData();
-    const { user } = useAuth();
+    const { user, getAuthHeader } = useAuth();
     const [showBuyModal, setShowBuyModal] = useState(false);
     const [paymentInfo, setPaymentInfo] = useState(null);
     const [copied, setCopied] = useState(false);
@@ -41,7 +41,9 @@ export default function DashboardPage() {
 
     const fetchPaymentInfo = async () => {
         try {
-            const res = await fetch('/api/settings');
+            const res = await fetch('/api/settings', {
+                headers: getAuthHeader()
+            });
             const data = await res.json();
             if (data.success) {
                 setPaymentInfo({
@@ -59,9 +61,7 @@ export default function DashboardPage() {
     const fetchSubscriptionInfo = async () => {
         try {
             const res = await fetch('/api/auth/me', {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
+                headers: getAuthHeader()
             });
             const data = await res.json();
             if (data.success && data.user) {

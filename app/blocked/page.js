@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { LogOut, CreditCard, Phone, Copy, Check, Clock } from 'lucide-react';
 
 export default function BlockedPage() {
-    const { logout } = useAuth();
+    const { logout, getAuthHeader } = useAuth();
     const [paymentInfo, setPaymentInfo] = useState(null);
     const [loading, setLoading] = useState(true);
     const [copied, setCopied] = useState(false);
@@ -17,7 +17,9 @@ export default function BlockedPage() {
 
     const fetchPaymentInfo = async () => {
         try {
-            const res = await fetch('/api/settings');
+            const res = await fetch('/api/settings', {
+                headers: getAuthHeader()
+            });
             const data = await res.json();
             if (data.success) {
                 setPaymentInfo({

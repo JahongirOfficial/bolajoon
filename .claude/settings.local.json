@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /c/Users/User/Desktop/bolajoon/.claude -type f -name *.md)"
+    ]
+  }
+}

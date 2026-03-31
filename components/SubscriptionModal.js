@@ -93,7 +93,7 @@ export function useSubscription() {
 const TELEGRAM_ADMIN = 'namozjon_cdo';
 
 export default function SubscriptionModal() {
-    const { user } = useAuth();
+    const { user, getAuthHeader } = useAuth();
     const { showModal, setShowModal, daysRemaining } = useSubscription();
     const [paymentInfo, setPaymentInfo] = useState(null);
     const [copied, setCopied] = useState(false);
@@ -106,7 +106,9 @@ export default function SubscriptionModal() {
 
     const fetchData = async () => {
         try {
-            const res = await fetch('/api/settings');
+            const res = await fetch('/api/settings', {
+                headers: getAuthHeader()
+            });
             const data = await res.json();
             if (data.success) {
                 setPaymentInfo({

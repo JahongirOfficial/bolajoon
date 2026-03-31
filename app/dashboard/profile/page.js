@@ -96,7 +96,9 @@ export default function ProfilePage() {
 
     const fetchPaymentInfo = async () => {
         try {
-            const res = await fetch('/api/settings');
+            const res = await fetch('/api/settings', {
+                headers: getAuthHeader()
+            });
             const data = await res.json();
             if (data.success) {
                 setPaymentInfo({

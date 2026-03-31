@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 import { ArrowLeft, BookOpen, ShoppingCart, Phone, Copy, Check } from 'lucide-react';
 import SimpleFlipBook from '@/components/SimpleFlipBook';
@@ -8,6 +9,7 @@ import SimpleFlipBook from '@/components/SimpleFlipBook';
 const PDF_PATH = '/api/book/pdf';
 
 export default function BookPage() {
+    const { getAuthHeader } = useAuth();
     const [showBuyModal, setShowBuyModal] = useState(false);
     const [paymentInfo, setPaymentInfo] = useState(null);
     const [copied, setCopied] = useState(false);
@@ -19,7 +21,9 @@ export default function BookPage() {
 
     const fetchPaymentInfo = async () => {
         try {
-            const res = await fetch('/api/settings');
+            const res = await fetch('/api/settings', {
+                headers: getAuthHeader()
+            });
             const data = await res.json();
             if (data.success) {
                 setPaymentInfo({

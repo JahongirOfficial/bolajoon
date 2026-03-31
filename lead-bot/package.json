@@ -1,0 +1,14 @@
+{
+  "name": "bolajoon-lead-bot",
+  "version": "1.0.0",
+  "description": "Bolajoon.uz Lead Telegram Bot",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "node-telegram-bot-api": "^0.67.0",
+    "dotenv": "^16.0.0"
+  }
+}
