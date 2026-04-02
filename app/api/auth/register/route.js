@@ -34,7 +34,7 @@ export async function POST(request) {
 
         // Validation
         if (!name || !phone || !password) {
-            return errorResponse('Ism, telefon raqam va parol kiritilishi shart');
+            return errorResponse('Ism, familiya, telefon raqam va parol kiritilishi shart');
         }
 
         if (password.length < 6) {

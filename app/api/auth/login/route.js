@@ -79,7 +79,10 @@ export async function POST(request) {
         return response;
 
     } catch (error) {
-        console.error('Login error:', error);
+        console.error('Login error:', error.message, error.stack);
+        if (error.message?.includes('MONGODB_URI') || error.message?.includes('connect')) {
+            return serverError('Ma\'lumotlar bazasiga ulanishda xatolik. Qaytadan urinib ko\'ring.');
+        }
         return serverError('Kirishda xatolik');
     }
 }

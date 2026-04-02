@@ -31,7 +31,7 @@ const countries = [
     { code: 'BY', dialCode: '375', name: 'Belarus', flag: '🇧🇾', format: '## ### ## ##', length: 9 },
 ];
 
-export default function PhoneInput({ value, onChange, className = '', ...props }) {
+export default function PhoneInput({ value, onChange, className = '', style: parentStyle = {}, ...props }) {
     const [isOpen, setIsOpen] = useState(false);
     const [selectedCountry, setSelectedCountry] = useState(countries[0]);
     const [phoneNumber, setPhoneNumber] = useState('');
@@ -137,11 +137,18 @@ export default function PhoneInput({ value, onChange, className = '', ...props }
                 <button
                     type="button"
                     onClick={() => setIsOpen(!isOpen)}
-                    className="btn btn-light border-end-0 rounded-start-4 rounded-end-0 d-flex align-items-center gap-2 px-3"
+                    className="btn btn-light d-flex align-items-center gap-2 px-3"
                     style={{
-                        borderColor: '#dee2e6',
+                        border: parentStyle.border || '1px solid #dee2e6',
+                        borderRight: 'none',
+                        borderRadius: parentStyle.borderRadius
+                            ? `${parentStyle.borderRadius} 0 0 ${parentStyle.borderRadius}`
+                            : '0.375rem 0 0 0.375rem',
                         backgroundColor: '#f8f9fa',
-                        minWidth: '100px'
+                        minWidth: '100px',
+                        fontSize: parentStyle.fontSize || 'inherit',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0
                     }}
                 >
                     <span style={{ fontSize: '20px' }}>{selectedCountry.flag}</span>
@@ -155,9 +162,15 @@ export default function PhoneInput({ value, onChange, className = '', ...props }
                     type="tel"
                     value={formatNumber(phoneNumber, selectedCountry.format)}
                     onChange={handlePhoneChange}
-                    className={`${className} rounded-start-0 border-start-0`}
+                    className={`${className}`}
                     placeholder={getPlaceholder()}
-                    style={{ borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }}
+                    style={{
+                        ...parentStyle,
+                        borderTopLeftRadius: 0,
+                        borderBottomLeftRadius: 0,
+                        flex: 1,
+                        minWidth: 0
+                    }}
                     {...props}
                 />
             </div>

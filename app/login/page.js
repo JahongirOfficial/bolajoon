@@ -15,7 +15,7 @@ export default function LoginPage() {
     const [error, setError] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [formData, setFormData] = useState({
-        phone: '+',
+        phone: '',
         password: ''
     });
 

@@ -15,8 +15,9 @@ export default function RegisterPage() {
     const [error, setError] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [formData, setFormData] = useState({
-        name: '',
-        phone: '+',
+        firstName: '',
+        lastName: '',
+        phone: '',
         password: '',
         confirmPassword: ''
     });
@@ -51,7 +52,14 @@ export default function RegisterPage() {
             return;
         }
 
-        const result = await register(formData.name, phone, formData.password);
+        if (!formData.firstName.trim() || !formData.lastName.trim()) {
+            setError('Ism va familiyani kiriting');
+            setLoading(false);
+            return;
+        }
+
+        const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`;
+        const result = await register(fullName, phone, formData.password);
         if (!result.success) {
             setError(result.error);
             setLoading(false);
@@ -230,23 +238,43 @@ export default function RegisterPage() {
                         )}
 
                         <form onSubmit={handleSubmit} method="POST" action="#">
-                            {/* Name */}
-                            <div style={{ marginBottom: '1rem' }}>
-                                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>
-                                    To'liq ism
-                                </label>
-                                <div style={{ position: 'relative' }}>
-                                    <User size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                                    <input
-                                        type="text"
-                                        name="name"
-                                        className="form-control py-3"
-                                        style={{ paddingLeft: '42px', borderRadius: '14px', border: '1.5px solid #e2e8f0', fontSize: '15px' }}
-                                        placeholder="Ismingiz"
-                                        value={formData.name}
-                                        onChange={handleChange}
-                                        required
-                                    />
+                            {/* Name fields */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '1rem' }}>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>
+                                        Ism
+                                    </label>
+                                    <div style={{ position: 'relative' }}>
+                                        <User size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                                        <input
+                                            type="text"
+                                            name="firstName"
+                                            className="form-control py-3"
+                                            style={{ paddingLeft: '36px', borderRadius: '14px', border: '1.5px solid #e2e8f0', fontSize: '14px' }}
+                                            placeholder="Ism"
+                                            value={formData.firstName}
+                                            onChange={handleChange}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>
+                                        Familiya
+                                    </label>
+                                    <div style={{ position: 'relative' }}>
+                                        <User size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                                        <input
+                                            type="text"
+                                            name="lastName"
+                                            className="form-control py-3"
+                                            style={{ paddingLeft: '36px', borderRadius: '14px', border: '1.5px solid #e2e8f0', fontSize: '14px' }}
+                                            placeholder="Familiya"
+                                            value={formData.lastName}
+                                            onChange={handleChange}
+                                            required
+                                        />
+                                    </div>
                                 </div>
                             </div>
 

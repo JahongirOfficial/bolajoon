@@ -100,43 +100,23 @@ export default function SMSPage() {
 
         const selectedPhones = users
             .filter(user => selectedUsers.includes(user._id))
-            .map(user => user.phone)
-            .filter(phone => phone);
+            .map(user => user.phone?.replace(/[^0-9+]/g, ''))
+            .filter(Boolean);
 
         if (selectedPhones.length === 0) {
             alert('Tanlangan foydalanuvchilarda telefon raqam topilmadi');
             return;
         }
 
-        // Agar bitta raqam bo'lsa - to'g'ridan-to'g'ri SMS ilovasini ochish
-        if (selectedPhones.length === 1) {
-            const phoneNumber = selectedPhones[0].replace(/[^0-9+]/g, '');
-            const encodedMessage = encodeURIComponent(message.trim());
-            const smsUrl = `sms:${phoneNumber}?body=${encodedMessage}`;
-            window.open(smsUrl, '_blank');
-            return;
-        }
+        // Build multi-recipient SMS URI (works on Android & iOS)
+        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const encodedMessage = encodeURIComponent(message.trim());
+        const phoneList = selectedPhones.join(';'); // semicolon works on both platforms
+        const smsUrl = isIOS
+            ? `sms:${phoneList}&body=${encodedMessage}`
+            : `sms:${phoneList}?body=${encodedMessage}`;
 
-        // Ko'p raqamlar uchun - har biriga alohida SMS yuborish
-        const confirmed = confirm(
-            `${selectedPhones.length} ta foydalanuvchiga SMS yuboriladi.\n` +
-            `Har bir raqam uchun SMS ilovasi ochiladi.\n\n` +
-            `Davom etasizmi?`
-        );
-
-        if (!confirmed) return;
-
-        // Har bir raqam uchun ketma-ket SMS ilovasini ochish
-        selectedPhones.forEach((phone, index) => {
-            setTimeout(() => {
-                const phoneNumber = phone.replace(/[^0-9+]/g, '');
-                const encodedMessage = encodeURIComponent(message.trim());
-                const smsUrl = `sms:${phoneNumber}?body=${encodedMessage}`;
-                window.open(smsUrl, '_blank');
-            }, index * 1000); // Har bir SMS uchun 1 soniya kutish
-        });
-
-        alert(`${selectedPhones.length} ta SMS ilovasi ochilmoqda. Har birida xabarni yuborishingiz kerak.`);
+        window.location.href = smsUrl;
     };
 
     const copyPhoneNumbers = () => {
@@ -236,19 +216,13 @@ export default function SMSPage() {
                 </button>
             </div>
 
-            {/* Desktop ogohlantirish */}
+            {/* Info banner */}
             {!isMobile && (
-                <div className="alert alert-warning rounded-3 mb-4 d-flex align-items-start gap-3">
-                    <MessageSquare size={24} className="flex-shrink-0 mt-1" />
-                    <div>
-                        <h6 className="fw-bold mb-2">Desktop kompyuterda ishlatyapsiz</h6>
-                        <p className="mb-2">SMS ilovasi faqat mobil qurilmalarda ochiladi. Desktop da ishlatish uchun:</p>
-                        <ul className="mb-0 ps-3">
-                            <li>Telefon raqamlarni nusxalang va qo'lda SMS yuboring</li>
-                            <li>Yoki CSV faylga yuklab, keyin mobil qurilmadan foydalaning</li>
-                            <li>Yoki mobil qurilmadan bu sahifani oching</li>
-                        </ul>
-                    </div>
+                <div className="alert alert-info rounded-3 mb-4 d-flex align-items-center gap-3 py-2">
+                    <MessageSquare size={18} className="flex-shrink-0" />
+                    <span className="small">
+                        SMS yuborish uchun <strong>mobil qurilmadan</strong> oching — SMS ilovasi avtomatik ochiladi va barcha raqamlar tayyor bo'ladi.
+                    </span>
                 </div>
             )}
 
@@ -405,22 +379,21 @@ export default function SMSPage() {
                             >
                                 <Send size={20} />
                                 <span className="fw-semibold">
-                                    {selectedUsers.length === 1 
-                                        ? 'SMS Ilovasida Ochish' 
-                                        : `${selectedUsers.length} ta SMS Yuborish`}
+                                    {selectedUsers.length === 0
+                                        ? 'Foydalanuvchi tanlang'
+                                        : `SMS ilovasida ochish (${selectedUsers.length} ta)`}
                                 </span>
                             </button>
 
-                            <div className="alert alert-info rounded-3 mb-0 small">
+                            <div className="alert alert-success rounded-3 mb-0 small">
                                 <div className="d-flex align-items-start gap-2">
                                     <MessageSquare size={16} className="flex-shrink-0 mt-1" />
                                     <div>
                                         <p className="mb-1 fw-semibold">Qanday ishlaydi:</p>
                                         <ul className="mb-0 ps-3">
-                                            <li>1 ta raqam: SMS ilovasi ochiladi, xabar tayyor</li>
-                                            <li>Ko'p raqamlar: Har bir raqam uchun alohida SMS ilovasi ochiladi</li>
-                                            <li>Har bir SMS ni qo'lda yuborishingiz kerak</li>
-                                            <li>Bu usul 100% tekin (telefon SMS balansidan foydalanadi)</li>
+                                            <li>Mobilda: SMS ilovasi barcha raqamlar bilan ochiladi</li>
+                                            <li>Xabar tayyor — faqat "Yuborish" bosasiz</li>
+                                            <li>100% tekin (telefon balansidan)</li>
                                         </ul>
                                     </div>
                                 </div>
