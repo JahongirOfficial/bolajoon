@@ -226,9 +226,24 @@ export default function AddLessonPage() {
         setError('');
 
         // Validate vocabulary for games that need it
-        const gamesNeedingVocabulary = ['vocabulary', 'pop-the-balloon', 'drop-to-basket'];
+        const gamesNeedingVocabulary = ['vocabulary', 'pop-the-balloon', 'drop-to-basket', 'shopping-basket', 'build-the-body', 'movements'];
         if (gamesNeedingVocabulary.includes(formData.gameType) && formData.vocabulary.length === 0) {
             setError(`Bu o'yin uchun kamida bitta so'z qo'shish kerak!`);
+            setLoading(false);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
+
+        // Filter out incomplete vocabulary items and validate
+        const cleanVocabulary = formData.vocabulary.filter(v => v.word?.trim() && v.translation?.trim());
+        if (cleanVocabulary.length > 1000) {
+            setError(`Lug'at 1000 ta so'zdan oshmasligi kerak (hozir: ${cleanVocabulary.length})`);
+            setLoading(false);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
+        if (gamesNeedingVocabulary.includes(formData.gameType) && cleanVocabulary.length === 0) {
+            setError(`Bu o'yin uchun kamida bitta to'liq so'z (inglizcha va tarjima) qo'shish kerak!`);
             setLoading(false);
             window.scrollTo({ top: 0, behavior: 'smooth' });
             return;
@@ -238,7 +253,7 @@ export default function AddLessonPage() {
             const res = await fetch('/api/lessons', {
                 method: 'POST',
                 headers: getAuthHeader(),
-                body: JSON.stringify(formData)
+                body: JSON.stringify({ ...formData, vocabulary: cleanVocabulary })
             });
 
             const data = await res.json();

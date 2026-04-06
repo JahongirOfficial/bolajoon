@@ -29,7 +29,10 @@ export default function LessonsPage() {
     const [openStages, setOpenStages] = useState({ 1: true });
 
     const stages = useMemo(() => {
-        const sorted = [...lessons].sort((a, b) => (a.order || 0) - (b.order || 0));
+        const sorted = [...lessons].sort((a, b) => {
+            if ((a.level || 0) !== (b.level || 0)) return (a.level || 0) - (b.level || 0);
+            return (a.order || 0) - (b.order || 0);
+        });
         const stageMap = {};
         sorted.forEach((lesson, idx) => {
             const stageNum = Math.floor(idx / LESSONS_PER_STAGE) + 1;

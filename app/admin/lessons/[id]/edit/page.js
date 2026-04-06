@@ -340,21 +340,27 @@ export default function EditLessonPage() {
 
         // Validate vocabulary for games that need it
         const gamesNeedingVocabulary = ['vocabulary', 'shopping-basket', 'build-the-body', 'pop-the-balloon', 'drop-to-basket', 'movements'];
-        if (gamesNeedingVocabulary.includes(formData.gameType) && formData.vocabulary.length === 0) {
-            setError(`${formData.gameType === 'shopping-basket' ? 'Shopping Basket' : formData.gameType === 'build-the-body' ? 'Build the Body' : 'Bu'} o'yin uchun kamida bitta so'z qo'shish kerak!`);
+
+        // Filter out incomplete vocabulary items
+        const cleanVocabulary = formData.vocabulary.filter(v => v.word?.trim() && v.translation?.trim());
+        if (cleanVocabulary.length > 1000) {
+            setError(`Lug'at 1000 ta so'zdan oshmasligi kerak (hozir: ${cleanVocabulary.length})`);
+            setLoading(false);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
+        if (gamesNeedingVocabulary.includes(formData.gameType) && cleanVocabulary.length === 0) {
+            setError(`${formData.gameType === 'shopping-basket' ? 'Shopping Basket' : formData.gameType === 'build-the-body' ? 'Build the Body' : 'Bu'} o'yin uchun kamida bitta to'liq so'z (inglizcha va tarjima) qo'shish kerak!`);
             setLoading(false);
             window.scrollTo({ top: 0, behavior: 'smooth' });
             return;
         }
 
         try {
-            console.log('Submitting formData:', formData);
-            console.log('Balloon colors:', formData.gameSettings?.balloonColors);
-            
             const res = await fetch(`/api/lessons/${params.id}`, {
                 method: 'PUT',
                 headers: getAuthHeader(),
-                body: JSON.stringify(formData)
+                body: JSON.stringify({ ...formData, vocabulary: cleanVocabulary })
             });
 
             const data = await res.json();
