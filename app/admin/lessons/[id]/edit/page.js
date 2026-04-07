@@ -548,6 +548,32 @@ export default function EditLessonPage() {
                                 onChange={handleChange}
                             />
                         </div>
+
+                        <div className="row g-3">
+                            <div className="col-6">
+                                <label className="form-label fw-semibold">Daraja (Level)</label>
+                                <input
+                                    type="number"
+                                    name="level"
+                                    className="form-control rounded-3 py-2"
+                                    min="1"
+                                    value={formData.level}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                            <div className="col-6">
+                                <label className="form-label fw-semibold">Tartib raqami (Order)</label>
+                                <input
+                                    type="number"
+                                    name="order"
+                                    className="form-control rounded-3 py-2"
+                                    min="0"
+                                    value={formData.order}
+                                    onChange={handleChange}
+                                />
+                                <small className="text-muted">Kichik raqam — yuqorida ko'rinadi</small>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

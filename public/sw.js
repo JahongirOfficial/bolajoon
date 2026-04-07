@@ -39,14 +39,18 @@ self.addEventListener('fetch', (event) => {
     // Skip API requests - always fetch from network
     if (event.request.url.includes('/api/')) return;
 
+    // Skip chrome-extension and non-http requests
+    const url = event.request.url;
+    if (!url.startsWith('http://') && !url.startsWith('https://')) return;
+
     event.respondWith(
         fetch(event.request)
             .then((response) => {
                 // Clone response for caching
                 const responseClone = response.clone();
 
-                // Cache successful responses
-                if (response.status === 200) {
+                // Cache only valid http/https successful responses
+                if (response.status === 200 && (url.startsWith('http://') || url.startsWith('https://'))) {
                     caches.open(CACHE_NAME).then((cache) => {
                         cache.put(event.request, responseClone);
                     });
